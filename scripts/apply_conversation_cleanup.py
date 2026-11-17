@@ -65,6 +65,7 @@ function loadArchivedChatIds(): Set<string> {
         app,
         "  const handleDeleteConversation = async (id: string) => {\n",
         """  const archiveConversation = (id: string) => {
+    if (conversations.some((conversation) => conversation.id === id && conversation.running)) return
     setArchivedChatIds((current) => new Set(current).add(id))
     if (id === activeConvIdRef.current) handleNewChat()
   }
@@ -165,7 +166,7 @@ function loadArchivedChatIds(): Set<string> {
                 <button type="button" className="underline" onClick={() => onSelect(c.id)}>
                   Revisar execução
                 </button>
-                {onArchive && <button type="button" className="underline" onClick={() => onArchive(c.id)}>
+                {onArchive && !c.running && <button type="button" className="underline" onClick={() => onArchive(c.id)}>
                   Ocultar da lista
                 </button>}
                 <span className="basis-full text-neutral-500">
@@ -175,7 +176,7 @@ function loadArchivedChatIds(): Set<string> {
             ) : (
               <>
                 {feedback.retry && <button type="button" onClick={() => feedback.retry?.()} className="ml-1 underline">Tentar novamente</button>}
-                {onArchive && <button type="button" onClick={() => onArchive(c.id)} className="ml-2 underline">
+                {onArchive && !c.running && <button type="button" onClick={() => onArchive(c.id)} className="ml-2 underline">
                   Ocultar da lista
                 </button>}
               </>
