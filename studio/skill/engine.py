@@ -149,7 +149,8 @@ class Studio:
             raise StudioError("Referência deve ser PNG, JPEG ou WEBP")
         if source.stat().st_size > 20 * 1024 * 1024:
             raise StudioError("Referência maior que 20 MB")
-        header = source.open("rb").read(16)
+        with source.open("rb") as handle:
+            header = handle.read(16)
         valid = (header.startswith(b"\x89PNG\r\n\x1a\n") or
                  header.startswith(b"\xff\xd8\xff") or
                  (header.startswith(b"RIFF") and header[8:12] == b"WEBP"))
@@ -168,7 +169,7 @@ class Studio:
                 raise StudioError("Referência já existe")
             shutil.copy2(source, destination)
             p["references"][subject_id] = {
-                "path": str(destination.relative_to(self._path(project_id))),
+                "path": destination.relative_to(self._path(project_id)).as_posix(),
                 "sha256": hashlib.sha256(destination.read_bytes()).hexdigest(),
             }
         return {"subject_id": subject_id, "file": str(destination)}
