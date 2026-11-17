@@ -32,6 +32,9 @@ jobs:
             throw "Unexpected source commit: $actual"
           }
 
+      - name: Verify patch-script syntax before modifying Monaw
+        run: python -m compileall -q scripts
+
       - name: Apply packaging and diagnostic fixes
         run: python scripts/apply_fix.py monaw
 
@@ -75,7 +78,7 @@ jobs:
       - name: Test desktop preflight safety regressions
         working-directory: monaw/backend
         run: |
-          uv run --locked --group dev python -m pytest -q app/agent/tests/test_computer_state.py
+          uv run --locked --group dev python -m pytest -q app/agent/tests/test_computer_state.py app/agent/tests/test_local_data_retention.py
           if ($LASTEXITCODE -ne 0) { throw 'Desktop safety regression tests failed' }
 
       - name: Build frozen Python backend for Windows
@@ -102,11 +105,15 @@ jobs:
           npm ci --no-audit --no-fund
           if ($LASTEXITCODE -ne 0) { throw 'npm ci failed' }
 
-      - name: Typecheck app with notification integration
+      - name: Typecheck and syntax-check Electron notifications
         working-directory: monaw/frontend
         run: |
           npm run typecheck
           if ($LASTEXITCODE -ne 0) { throw 'Frontend typecheck failed' }
+          node --check electron/main.js
+          if ($LASTEXITCODE -ne 0) { throw 'Electron main syntax failed' }
+          node --check electron/preload.js
+          if ($LASTEXITCODE -ne 0) { throw 'Electron preload syntax failed' }
 
       - name: Generate third-party license notices
         working-directory: monaw/backend
