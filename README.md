@@ -50,6 +50,12 @@ Quando um ticket de aprovação é criado, o Monaw pode notificar mesmo com a ja
 
 Os avisos não incluem senhas, caminhos pessoais nem conteúdo da conversa. Esse recurso depende das notificações do Windows estarem habilitadas, da integração Electron estar ativa e do notebook não estar suspenso. Os botões ainda precisam ser validados em uma instalação Windows 10 real, e algumas configurações do sistema podem suprimir a notificação ou trazer o aplicativo ao primeiro plano.
 
+## Execução persistente e econômica
+
+O workflow aplica `scripts/apply_task_persistence.py` para orientar o agente a não desistir após a primeira falha recuperável. Ele deve classificar o erro, verificar o que já foi concluído, tentar **até duas alternativas distintas e seguras**, conservar o progresso e entregar resultados parciais quando houver bloqueio. A alteração é de estratégia do agente, **não é um bypass** de guardas de execução, revisão, permissões nem ferramentas externas. Ações de resultado incerto nunca são repetidas automaticamente.
+
+O futuro **Estúdio de Mininovelas** está documentado em [docs/flow-mininovelas.md](docs/flow-mininovelas.md): roteiro, storyboard, fichas de personagens, prompts coerentes, controle de créditos e integração supervisionada com Google Flow. **Ainda não há automação de geração no Flow nem integração com a conta Google.** A integração será desenvolvida e testada separadamente, priorizando custos baixos e confirmação de cada gasto.
+
 ## Segurança
 
 - Não coloque neste repositório senhas, tokens, chaves de API, logs privados, arquivos de configuração ou a pasta %USERPROFILE%\.monaw.
