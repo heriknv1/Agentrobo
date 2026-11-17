@@ -147,10 +147,19 @@ def test_agentrobo_input_failure_is_not_marked_no_effect(desktop, monkeypatch):
     fake = FakeExecution()
     monkeypatch.setattr(operation_execution, "current_operation_execution", lambda: fake)
     _, _, state_id, events = desktop
-    monkeypatch.setattr(tools, "_dispatch_batch_action", lambda *a, **k: {"status": "error", "reason_code": "cannot_type"})
+    # Isolate the dispatched-action path: permission and preflight guards have
+    # their own tests and must not short-circuit this failure-after-dispatch case.
+    monkeypatch.setattr(tools, "_permission_for_batch", lambda *a, **k: None)
+    monkeypatch.setattr(tools, "_validate_observation", lambda *a, **k: None)
+    attempted = []
+    def fail_after_dispatch(kind, *args, **kwargs):
+        attempted.append(kind)
+        return {"status": "error", "reason_code": "cannot_type"}
+    monkeypatch.setattr(tools, "_dispatch_batch_action", fail_after_dispatch)
     outcome = json.loads(tools._computer_functions_act(actions=[{"type": "press_key", "key": "tab"}], state_id=state_id))
     assert outcome["status"] == "error"
-    assert events == ["focus"]
+    assert attempted == ["press_key"], outcome
+    assert events == ["focus"], outcome
     assert fake.calls == 0
 
 
