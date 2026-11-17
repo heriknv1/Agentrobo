@@ -42,7 +42,7 @@ def main(root):
         "                      Reparar (verificar)\n                    </button>")
     change(target,"                      Skip\n                    </button>",
         "                      Ignorar somente após revisar\n                    </button>")
-    change(target,"                            > Undo\n", "                            > Regressar (desfazer)\n")
+    change(target," /> Undo\n                          </button>", " /> Regressar (desfazer)\n                          </button>")
     print("Recovery guidance added; no automatic replay or unsafe rollback.")
 
 if __name__=="__main__":
