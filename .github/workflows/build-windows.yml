@@ -62,6 +62,9 @@ jobs:
       - name: Enable bounded persistent task execution
         run: python scripts/apply_task_persistence.py monaw
 
+      - name: Bundle Agentrobo Studio skill into Monaw backend
+        run: python scripts/install_studio.py monaw
+
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
@@ -71,6 +74,17 @@ jobs:
         uses: astral-sh/setup-uv@v6
         with:
           enable-cache: false
+
+      - name: Test Studio 720p, budgets, scenes and duplicate prevention
+        run: |
+          python -m unittest discover -s studio/tests -v
+          if ($LASTEXITCODE -ne 0) { throw 'Studio unit tests failed' }
+
+      - name: Verify Studio skill is registered in Monaw
+        working-directory: monaw/backend
+        run: |
+          uv run --locked --group packaging python -c "from app.agent.skill_loader import load_tools; from app.agent.settings_store import AgentSettings; skills, registry = load_tools(AgentSettings()); assert any(s.name == 'agentrobo-studio' and s.enabled for s in skills); names = {t['name'] for t in registry.get_all_tools()}; assert {'studio_create_project', 'studio_plan_episode', 'studio_prepare_scene', 'studio_assemble_episode'} <= names; print('STUDIO_REGISTERED_OK')"
+          if ($LASTEXITCODE -ne 0) { throw 'Native Studio skill registration failed' }
 
       - name: Confirm native Windows automation imports before freezing
         working-directory: monaw/backend
