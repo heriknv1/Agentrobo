@@ -48,7 +48,7 @@ jobs:
       - name: Confirm native Windows automation imports before freezing
         working-directory: monaw/backend
         run: |
-          uv run --locked --group packaging python -c "import pywinauto, comtypes, mss, win32gui, win32process, win32clipboard, win32file; print('SOURCE_UIA_IMPORT_OK')"
+          uv run --locked --group packaging python -c "import pywinauto, comtypes, mss, mss.tools, PIL.Image, win32gui, win32process, win32clipboard, win32file; print('SOURCE_UIA_IMPORT_OK')"
           if ($LASTEXITCODE -ne 0) { throw 'Unfrozen import test failed' }
 
       - name: Build frozen Python backend for Windows
@@ -61,7 +61,7 @@ jobs:
         working-directory: monaw/backend
         run: |
           $exe = '.\dist\monaw-backend\monaw-backend.exe'
-          & $exe -c "import pywinauto, comtypes, mss, win32gui, win32process, win32clipboard, win32file; from app.skills.computer_use.window_ops import _uia_available; assert _uia_available(), 'UIA unavailable'; print('FROZEN_UIA_IMPORT_OK')"
+          & $exe -c "import pywinauto, comtypes, mss, mss.tools, PIL.Image, win32gui, win32process, win32clipboard, win32file; from app.skills.computer_use.window_ops import _uia_available; assert _uia_available(), 'UIA unavailable'; print('FROZEN_UIA_IMPORT_OK')"
           if ($LASTEXITCODE -ne 0) { throw 'Frozen backend import test failed; installer will not be uploaded' }
 
       - name: Set up Node.js
