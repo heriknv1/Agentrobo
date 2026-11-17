@@ -43,7 +43,7 @@ ipcMain.handle('approval:notify', (event, payload) => {
   const notice = new Notification({
     title: 'Jarvis: aprovação necessária',
     body: quickApproval
-      ? \`Ação de baixo risco (\${category}). Aprovar ou recusar?\`
+      ? `Ação de baixo risco (${category}). Aprovar ou recusar?`
       : 'Ação pendente. Abra o Monaw para revisar os detalhes antes de autorizar.',
     actions: quickApproval ? [
       { type: 'button', text: 'Aprovar' },
