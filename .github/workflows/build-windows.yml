@@ -44,6 +44,9 @@ jobs:
       - name: Treat provably pre-dispatch desktop validation errors safely
         run: python scripts/apply_safe_preflight.py monaw
 
+      - name: Show Chrome uncertain-action diagnostics without unsafe retries
+        run: python scripts/apply_browser_diagnostics.py monaw
+
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
