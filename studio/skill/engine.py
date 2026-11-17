@@ -122,11 +122,54 @@ class Studio:
             "genre": _text(genre, "gênero", 80), "aspect": aspect, "resolution": "720p",
             "allowed_models": sorted(MODELS), "daily_limit": int(daily_limit),
             "episode_limit": int(episode_limit), "characters": [],
-            "locations": [], "season_arc": "", "episodes": [], "created_at": _now(),
+            "locations": [], "references": {}, "season_arc": "", "episodes": [], "created_at": _now(),
             "updated_at": _now()
         }
         _atomic_json(folder / "project.json", state)
         return {"id": project_id, "folder": str(folder), "title": title, "resolution": "720p"}
+
+    def projects(self):
+        result = []
+        for path in sorted(self.root.glob("serie-*/project.json")):
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+                result.append({"id": data["id"], "title": data["title"],
+                               "episodes": len(data.get("episodes", [])),
+                               "updated_at": data.get("updated_at")})
+            except (OSError, ValueError, KeyError):
+                continue
+        return {"projects": result}
+
+    def attach_reference(self, project_id, subject_id, file_path):
+        subject_id = _id(subject_id)
+        source = Path(file_path).expanduser().resolve(strict=True)
+        if not source.is_file() or source.suffix.lower() not in {".png", ".jpg", ".jpeg", ".webp"}:
+            raise StudioError("Referência deve ser PNG, JPEG ou WEBP")
+        if source.stat().st_size > 20 * 1024 * 1024:
+            raise StudioError("Referência maior que 20 MB")
+        header = source.open("rb").read(16)
+        valid = (header.startswith(b"\x89PNG\r\n\x1a\n") or
+                 header.startswith(b"\xff\xd8\xff") or
+                 (header.startswith(b"RIFF") and header[8:12] == b"WEBP"))
+        if not valid:
+            raise StudioError("Arquivo não possui assinatura de imagem esperada")
+        with self._edit(project_id) as p:
+            valid_ids = {ch["id"] for ch in p["characters"]} | {loc["id"] for loc in p["locations"]}
+            if subject_id not in valid_ids:
+                raise StudioError("Sujeito de referência não cadastrado na bíblia")
+            if any(sc["status"] in {"submitted", "uncertain", "generated", "approved"} for ep in p["episodes"] for sc in ep["scenes"]):
+                raise StudioError("Referências congeladas após geração; evite quebrar continuidade")
+            if subject_id in p.setdefault("references", {}):
+                raise StudioError("Referência existente: não sobrescreva automaticamente")
+            destination = self._path(project_id) / "referencias" / (subject_id + source.suffix.lower())
+            if destination.exists():
+                raise StudioError("Referência já existe")
+            shutil.copy2(source, destination)
+            p["references"][subject_id] = {
+                "path": str(destination.relative_to(self._path(project_id))),
+                "sha256": hashlib.sha256(destination.read_bytes()).hexdigest(),
+            }
+        return {"subject_id": subject_id, "file": str(destination)}
 
     def bible(self, project_id, characters, locations, arc):
         if not isinstance(characters, list) or not isinstance(locations, list):
@@ -144,6 +187,11 @@ class Studio:
         if len(set(c["id"] for c in characters)) != len(characters):
             raise StudioError("IDs de personagem duplicados")
         with self._edit(project_id) as p:
+            if p.get("references") or any(
+                sc["status"] in {"submitted", "uncertain", "generated", "approved"}
+                for ep in p["episodes"] for sc in ep["scenes"]
+            ):
+                raise StudioError("Bíblia congelada após referências/geração para manter continuidade")
             p["characters"] = characters
             p["locations"] = locations
             p["season_arc"] = _text(arc, "arco da temporada")
@@ -224,7 +272,9 @@ class Studio:
         place = next((x for x in p["locations"] if x["id"] == s["location_id"]), None)
         character_lines = "\n".join(
             f"- {c['id']}: {c['name']}; appearance: {c['appearance']}; "
-            f"wardrobe: {c['wardrobe']}; voice: {c['voice']}" for c in people
+            f"wardrobe: {c['wardrobe']}; voice: {c['voice']}; "
+            f"reference: {p.get('references', {}).get(c['id'], {}).get('path', 'none')}"
+            for c in people
         )
         prompt = (
             f"Create ONE coherent {s['seconds']}-second scene for a Brazilian {p['genre']} television "
@@ -244,6 +294,34 @@ class Studio:
                 "seconds": s["seconds"], "resolution": "720p", "aspect": s["aspect"],
                 "estimated_credits": s["expected_credits"], "prompt": prompt,
                 "flow_url": "https://flow.google.com/"}
+
+    def revise_scene(self, project_id, scene_id, changes):
+        if not isinstance(changes, dict) or not changes:
+            raise StudioError("Informe alterações JSON")
+        allowed = {"summary", "dialogue", "camera", "continuity", "model",
+                   "seconds", "feature", "characters", "location_id"}
+        if not set(changes).issubset(allowed):
+            raise StudioError("Alterações desconhecidas")
+        with self._edit(project_id) as p:
+            _, scene = self._scene(p, scene_id)
+            if scene["status"] not in {"planned", "prepared", "rejected"} or scene["attempts"]:
+                raise StudioError("Cena já teve tentativa; para corrigir, revise a recuperação")
+            if "characters" in changes:
+                known = {c["id"] for c in p["characters"]}
+                if not isinstance(changes["characters"], list) or any(
+                    c not in known for c in changes["characters"]
+                ):
+                    raise StudioError("Personagens inválidos")
+            for key, value in changes.items():
+                if key in {"summary", "dialogue", "camera", "continuity", "location_id"}:
+                    if key == "summary":
+                        value = _text(value, "resumo")
+                    elif not isinstance(value, str) or len(value) > 1800:
+                        raise StudioError("Campo de texto inválido")
+                scene[key] = value
+            scene["expected_credits"] = price(scene["model"], scene["seconds"], scene["feature"])
+            scene["status"] = "planned"
+        return self.prompt(project_id, scene_id)
 
     def next_scene(self, project_id, episode_number=None):
         p = self._load(project_id)
@@ -410,7 +488,7 @@ class Studio:
             subprocess.run(cmd, check=True, timeout=180)
             normalized.append(path)
         manifest = output_dir / "temporarios" / "concat.txt"
-        manifest.write_text("".join("file '" + str(f.resolve()).replace("'", "'\\''")
+        manifest.write_text("".join("file '" + f.resolve().as_posix().replace("'", "'\\''")
                                     + "'\n" for f in normalized), encoding="utf-8")
         final = output_dir / f"E{episode_number:03d}-720p.mp4"
         if final.exists():
