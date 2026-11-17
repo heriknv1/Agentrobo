@@ -10,7 +10,7 @@ from pathlib import Path
 
 ORIGINAL_LOOP = 'for package in ("tiktoken", "tiktoken_ext", "scrapling", "mcp", "uvicorn"):'
 
-ADDITION = '''\n# Windows UI Automation modules are used through lazy imports at runtime.\n# Collect their binaries and submodules explicitly for PyInstaller.\nfor package in ("pywinauto", "comtypes", "win32", "win32com"):\n    package_datas, package_binaries, package_hidden = collect_all(package)\n    datas += package_datas\n    binaries += package_binaries\n    hiddenimports += package_hidden\n\nhiddenimports += [\n    "pywinauto", "comtypes", "pythoncom", "pywintypes",\n    "win32api", "win32con", "win32gui", "win32process",\n    "win32event", "win32clipboard", "win32file", "win32security",\n    "win32ui", "win32gui_struct", "win32timezone",\n]\n'''
+ADDITION = '''\n# Windows UI Automation modules are used through lazy imports at runtime.\n# Collect their binaries and submodules explicitly for PyInstaller.\nfor package in ("pywinauto", "comtypes", "mss", "PIL", "win32", "win32com"):\n    package_datas, package_binaries, package_hidden = collect_all(package)\n    datas += package_datas\n    binaries += package_binaries\n    hiddenimports += package_hidden\n\nhiddenimports += [\n    "pywinauto", "comtypes", "pythoncom", "pywintypes",\n    "win32api", "win32con", "win32gui", "win32process",\n    "win32event", "win32clipboard", "win32file", "win32security",\n    "win32ui", "win32gui_struct", "win32timezone",\n]\n'''
 
 OLD_UIA = '''def _uia_available() -> bool:\n    """Check if pywinauto is importable."""\n    try:\n        import pywinauto  # noqa: F401\n        return True\n    except ImportError:\n        return False\n'''
 
