@@ -9,6 +9,12 @@ Repositório público e não oficial, com workflow manual para compilar uma cóp
 3. Aplica o patch de empacotamento, compila o backend PyInstaller e testa importações no executável congelado.
 4. Somente se passar gera um instalador de Windows. Baixe o artifact Monaw-UIA-1.1.0-Windows-x64 com instalador e SHA-256 (retenção 3 dias).
 
+## Aviso ao terminar uma tarefa
+
+O projeto também aplica scripts/apply_notifications.py durante o build. Ao concluir ou falhar uma execução de conversa observada pelo Monaw, mostra um aviso nativo do Windows caso a janela do aplicativo esteja minimizada ou sem foco. O alerta usa somente texto genérico (não exibe prompts, resultados ou caminhos privados). Clique no aviso para voltar à janela do Monaw.
+
+Limitações: com o Monaw completamente fechado ou o Windows suspenso, não há notificação; se você trocar de conversa e parar de acompanhar uma execução, o aviso dessa conversa não está garantido. O sistema respeita as configurações de notificações e Assistente de Foco do Windows. Aviso por voz ainda não foi implementado.
+
 ## Segurança
 
 - Não coloque neste repositório senhas, tokens, chaves de API, logs privados, arquivos de configuração ou a pasta %USERPROFILE%\.monaw.
