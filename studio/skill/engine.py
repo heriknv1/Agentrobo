@@ -196,6 +196,17 @@ class Studio:
         raise StudioError("Cena não encontrada")
 
     @staticmethod
+    def _today_committed(project):
+        today = _now()[:10]
+        return sum(
+            attempt["credits"]
+            for episode in project["episodes"]
+            for scene in episode["scenes"]
+            for attempt in scene["attempts"]
+            if attempt["state"] != "proved_not_charged" and attempt["at"][:10] == today
+        )
+
+    @staticmethod
     def _committed(project, episode_number=None):
         # Includes uncertain browser results: never automatically release reservations.
         cents = 0
@@ -268,8 +279,11 @@ class Studio:
                 raise StudioError("Cena não preparada ou já enviada; nunca submeta duas vezes")
             if confirmed_cost != s["expected_credits"]:
                 raise StudioError("Custo da interface difere do previsto: revise a tabela de preços")
-            if daily_spent < 0 or daily_spent + confirmed_cost > p["daily_limit"]:
-                raise StudioError("Limite diário ultrapassado")
+            if daily_spent < 0 or max(daily_spent, self._today_committed(p)) + confirmed_cost > p["daily_limit"]:
+                raise StudioError("Limite diário ultrapassado (considerando o histórico registrado)")
+            if any(other["status"] == "uncertain" for episode in p["episodes"]
+                   for other in episode["scenes"] if other["id"] != scene_id):
+                raise StudioError("Existe outra cena com geração incerta: reconcilie antes de enviar")
             if self._committed(p, ep["number"]) + confirmed_cost > p["episode_limit"]:
                 raise StudioError("Limite do episódio ultrapassado")
             s["attempts"].append({"at": _now(), "credits": confirmed_cost,
