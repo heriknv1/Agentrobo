@@ -71,3 +71,5 @@ O workflow Windows instala a skill, executa testes unitários e confirma o regis
 ## Disponibilidade
 
 O motor de projeto e orçamento passou na suíte de testes Python do repositório público. O instalador Windows e a automação real no Google Flow precisam de validação independente; testes locais não autorizam gasto de créditos.
+
+A validação de caminhos de referência em Windows utiliza barras normalizadas em metadados, sem exigir que o usuário mova suas imagens manualmente.
