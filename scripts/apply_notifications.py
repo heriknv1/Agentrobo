@@ -62,7 +62,8 @@ APP_NEW = """  // Notify only for messages observed running in this window. Old 
       }
       if (!observedRunningMessages.current.delete(message.id)) continue
       if (message.runStatus === 'complete' || message.runStatus === 'error') {
-        void window.electronAPI?.notifyTaskStatus?.(message.runStatus).catch(() => {})
+        const notify = window.electronAPI?.notifyTaskStatus
+        if (notify) void notify(message.runStatus).catch(() => {})
       }
     }
   }, [messages])
