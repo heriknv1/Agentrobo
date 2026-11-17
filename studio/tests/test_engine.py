@@ -2,6 +2,8 @@
 import json
 import tempfile
 import unittest
+import shutil
+import subprocess
 from pathlib import Path
 from unittest.mock import patch
 
@@ -134,6 +136,33 @@ class StudioTests(unittest.TestCase):
             self.studio.episode(self.project, 2, "Outro", "sinopse", [
                 {"summary": "teste", "characters": ["BAD"]}
             ])
+
+    @unittest.skipUnless(shutil.which("ffmpeg") and shutil.which("ffprobe"), "requires FFmpeg")
+    def test_actual_ffmpeg_720p_montage(self):
+        sources = []
+        for i in range(2):
+            clip = Path(self.tmp.name) / ("source" + str(i) + ".mp4")
+            cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                   "-f", "lavfi", "-i", "color=c=blue:s=1280x720:r=24"]
+            if i == 0:
+                cmd += ["-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000"]
+            cmd += ["-t", "1", "-c:v", "libx264", "-preset", "ultrafast",
+                    "-pix_fmt", "yuv420p"]
+            if i == 0:
+                cmd += ["-c:a", "aac"]
+            cmd += [str(clip)]
+            subprocess.run(cmd, check=True, timeout=90)
+            sources.append(clip)
+        for i, clip in enumerate(sources, 1):
+            scene = "E001C" + str(i).zfill(3)
+            self.studio.prepare(self.project, scene)
+            self.studio.import_clip(self.project, scene, str(clip))
+            self.studio.review(self.project, scene, approve=True)
+        result = self.studio.assemble(self.project, 1)
+        video = Path(result["video"])
+        self.assertTrue(video.is_file())
+        self.assertEqual(self.studio._probe(video), (1280, 720))
+        self.assertEqual(result["scenes"], 2)
 
     def test_no_assembly_until_all_approved(self):
         with self.assertRaisesRegex(StudioError, "TODOS"):
