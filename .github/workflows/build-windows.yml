@@ -41,6 +41,9 @@ jobs:
       - name: Add safe conversation cleanup recovery UI
         run: python scripts/apply_conversation_cleanup.py monaw
 
+      - name: Treat provably pre-dispatch desktop validation errors safely
+        run: python scripts/apply_safe_preflight.py monaw
+
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
@@ -56,6 +59,12 @@ jobs:
         run: |
           uv run --locked --group packaging python -c "import pywinauto, comtypes, mss, mss.tools, PIL.Image, win32gui, win32process, win32clipboard, win32file; print('SOURCE_UIA_IMPORT_OK')"
           if ($LASTEXITCODE -ne 0) { throw 'Unfrozen import test failed' }
+
+      - name: Test desktop preflight safety regressions
+        working-directory: monaw/backend
+        run: |
+          uv run --locked --group dev python -m pytest -q app/agent/tests/test_computer_state.py
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop safety regression tests failed' }
 
       - name: Build frozen Python backend for Windows
         working-directory: monaw/backend
