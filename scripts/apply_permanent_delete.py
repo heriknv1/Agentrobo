@@ -82,8 +82,8 @@ async def delete_conversation(conv_id: str):
         '''@router.delete("/conversations/{conv_id}", response_model=OkResponse)
 async def delete_conversation(
     conv_id: str,
-    discard_unresolved: bool = Query(False),
-    confirmation: str = Query("", max_length=32),
+    discard_unresolved: bool = False,
+    confirmation: str = "",
 ):
     # Deleting evidence never undoes external actions. Require an explicit
     # opt-in for unresolved, stopped Runs; ordinary DELETE stays protected.
@@ -100,11 +100,15 @@ async def delete_conversation(
             raise HTTPException(status_code=409, detail="A Run is still active. Stop it before deleting.")
     memory_manager = peek_memory_manager()
     try:
-        found = (
-            memory_manager.delete(conv_id, discard_unresolved=discard_unresolved)
-            if memory_manager is not None
-            else delete_conversation_file(conv_id, discard_unresolved=discard_unresolved)
-        )
+        if discard_unresolved:
+            found = (
+                memory_manager.delete(conv_id, discard_unresolved=True)
+                if memory_manager is not None
+                else delete_conversation_file(conv_id, discard_unresolved=True)
+            )
+        else:
+            # Preserve the upstream call contract and existing safety tests.
+            found = memory_manager.delete(conv_id) if memory_manager is not None else delete_conversation_file(conv_id)
 ''')
     replace(client,
         '''export async function deleteConversation(id: string): Promise<void> {
