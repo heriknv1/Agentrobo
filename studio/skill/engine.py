@@ -36,6 +36,8 @@ def price(model: str, seconds: int, feature: str = "text_to_video") -> int:
         raise StudioError("Modelo proibido: use veo-3.1-lite ou omni-flash-1.2")
     if feature not in FEATURES:
         raise StudioError("Tipo de geração desconhecido")
+    if type(seconds) is not int:
+        raise StudioError("Duração deve ser número inteiro de segundos")
     if model == "veo-3.1-lite":
         if seconds not in {4, 6, 8}:
             raise StudioError("Veo 3.1 Lite só permite 4, 6 ou 8 segundos")
@@ -349,7 +351,7 @@ class Studio:
 
     def record_submitted(self, project_id, scene_id, confirmed_cost: int, ui_evidence: str, daily_spent: int = 0):
         _text(ui_evidence, "evidência visível do Flow", 700)
-        if not isinstance(confirmed_cost, int) or confirmed_cost < 0:
+        if type(confirmed_cost) is not int or confirmed_cost < 0:
             raise StudioError("Custo confirmado inválido")
         with self._edit(project_id) as p:
             ep, s = self._scene(p, scene_id)
@@ -411,9 +413,11 @@ class Studio:
                 raise StudioError("Cena fora da etapa de importação")
             folder = self._path(project_id) / "episodios" / f"E{ep['number']:03d}" / "clipes"
             folder.mkdir(parents=True, exist_ok=True)
-            destination = folder / (scene_id + path.suffix.lower())
+            # Keep old rejected takes for inspection and comparison; never overwrite.
+            take = len(s["attempts"]) if s["attempts"] else 1
+            destination = folder / (scene_id + "-take" + str(take).zfill(2) + path.suffix.lower())
             if destination.exists():
-                raise StudioError("Arquivo dessa cena já existe: nenhuma sobrescrita automática")
+                raise StudioError("Tomada já importada; arquivo não será sobrescrito")
             shutil.copy2(path, destination)
             s["media"] = str(destination.relative_to(self._path(project_id)))
             s["status"] = "generated"
