@@ -67,3 +67,7 @@ A contabilidade local não substitui o saldo oficial do Flow nem inclui automati
 ## Build e validação
 
 O workflow Windows instala a skill, executa testes unitários e confirma o registro de suas ferramentas no Monaw. O instalador só será publicado se os testes passarem. A etapa de navegação real no Flow e a montagem com FFmpeg exigem testes no notebook e não são comprovadas por um build de código.
+
+## Disponibilidade
+
+O motor de projeto e orçamento passou na suíte de testes Python do repositório público. O instalador Windows e a automação real no Google Flow precisam de validação independente; testes locais não autorizam gasto de créditos.
