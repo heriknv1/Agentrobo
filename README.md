@@ -54,7 +54,11 @@ Os avisos não incluem senhas, caminhos pessoais nem conteúdo da conversa. Esse
 
 O workflow aplica `scripts/apply_task_persistence.py` para orientar o agente a não desistir após a primeira falha recuperável. Ele deve classificar o erro, verificar o que já foi concluído, tentar **até duas alternativas distintas e seguras**, conservar o progresso e entregar resultados parciais quando houver bloqueio. A alteração é de estratégia do agente, **não é um bypass** de guardas de execução, revisão, permissões nem ferramentas externas. Ações de resultado incerto nunca são repetidas automaticamente.
 
-O futuro **Estúdio de Mininovelas** está documentado em [docs/flow-mininovelas.md](docs/flow-mininovelas.md): roteiro, storyboard, fichas de personagens, prompts coerentes, controle de créditos e integração supervisionada com Google Flow. **Ainda não há automação de geração no Flow nem integração com a conta Google.** A integração será desenvolvida e testada separadamente, priorizando custos baixos e confirmação de cada gasto.
+## Estúdio de Mininovelas v0.1 (implementado, testes concluídos)
+
+Foi adicionada a skill nativa [agentrobo-studio](studio/skill/SKILL.md) ao Monaw. A documentação de uso está em [studio/README.md](studio/README.md), com projetos, fichas de personagens, referências, cenas, orçamento, validação de vídeo 720p e montagem FFmpeg. Os modelos aceitos são **Veo 3.1 Lite** e **Omni Flash 1.2**, ambos em 720p. A suíte de 13 testes passou, inclusive um teste real de montagem e exportação MP4 com FFmpeg. O build Windows com a skill integrada foi concluído com sucesso em [Actions #44130157763](https://github.com/heriknv1/Agentrobo/actions/runs/44130157763).
+
+A automação de clique, geração e download no **Google Flow** é conduzida de forma supervisionada pelo navegador do Monaw, com seleção baseada nos controles realmente observados e aprovação antes de gastar créditos. **A integração real à sua conta Flow ainda depende de teste no Windows 10 do usuário.** Não há uso de API privada nem garantia de produção de vídeos totalmente autônoma sem revisão. As propostas de evolução estão em [docs/flow-mininovelas.md](docs/flow-mininovelas.md).
 
 ## Segurança
 
