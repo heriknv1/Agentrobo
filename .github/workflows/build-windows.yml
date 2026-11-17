@@ -59,6 +59,9 @@ jobs:
       - name: Expose verified repair and rollback controls
         run: python scripts/apply_recovery_actions.py monaw
 
+      - name: Enable bounded persistent task execution
+        run: python scripts/apply_task_persistence.py monaw
+
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
