@@ -35,6 +35,9 @@ jobs:
       - name: Apply packaging and diagnostic fixes
         run: python scripts/apply_fix.py monaw
 
+      - name: Add Windows notifications for completed tasks
+        run: python scripts/apply_notifications.py monaw
+
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
@@ -74,6 +77,12 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           if ($LASTEXITCODE -ne 0) { throw 'npm ci failed' }
+
+      - name: Typecheck app with notification integration
+        working-directory: monaw/frontend
+        run: |
+          npm run typecheck
+          if ($LASTEXITCODE -ne 0) { throw 'Frontend typecheck failed' }
 
       - name: Generate third-party license notices
         working-directory: monaw/backend
