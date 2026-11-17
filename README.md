@@ -15,6 +15,17 @@ O projeto também aplica scripts/apply_notifications.py durante o build. Ao conc
 
 Limitações: com o Monaw completamente fechado ou o Windows suspenso, não há notificação; se você trocar de conversa e parar de acompanhar uma execução, o aviso dessa conversa não está garantido. O sistema respeita as configurações de notificações e Assistente de Foco do Windows. Aviso por voz ainda não foi implementado.
 
+## Limpeza segura de conversas com erro
+
+Depois de uma falha, se uma conversa tiver Run interrompido ou ação com resultado incerto, o Monaw pode bloquear a exclusão com HTTP 409 para preservar as evidências de segurança. Esta compilação **não contorna** esse bloqueio.
+
+Ao tentar excluir uma conversa bloqueada, você poderá:
+- **Revisar execução**, abrindo a conversa para verificar o estado no painel de recuperação;
+- **Ocultar da lista**, sem apagar mensagens, arquivos, registros ou tarefas em andamento;
+- usar **Restaurar conversas ocultas** para trazê-las de volta.
+
+Quando o servidor permitir, a exclusão normal continuará removendo a conversa permanentemente. A lista de IDs ocultos fica somente no armazenamento local da interface do Monaw; limpar o cache/dados da interface poderá restaurar a visualização dessas conversas. Não publique o perfil do Monaw no GitHub.
+
 ## Segurança
 
 - Não coloque neste repositório senhas, tokens, chaves de API, logs privados, arquivos de configuração ou a pasta %USERPROFILE%\.monaw.
