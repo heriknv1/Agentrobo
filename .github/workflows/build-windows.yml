@@ -38,6 +38,9 @@ jobs:
       - name: Add Windows notifications for completed tasks
         run: python scripts/apply_notifications.py monaw
 
+      - name: Add safe conversation cleanup recovery UI
+        run: python scripts/apply_conversation_cleanup.py monaw
+
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
