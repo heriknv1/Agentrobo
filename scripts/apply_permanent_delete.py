@@ -112,7 +112,7 @@ async def delete_conversation(
         '''export async function permanentlyDeleteStoppedConversation(id: string): Promise<void> {
   const params = new URLSearchParams({ discard_unresolved: 'true', confirmation: 'EXCLUIR' })
   const res = await apiFetch(
-    \`\${BASE}/api/conversations/\${encodeURIComponent(id)}?\${params}\`,
+    `${BASE}/api/conversations/${encodeURIComponent(id)}?${params}`,
     { method: 'DELETE' },
   )
   if (!res.ok && res.status !== 404) return throwApiError(res, 'Não foi possível excluir a conversa: pode haver uma tarefa em execução')
@@ -135,7 +135,7 @@ export async function deleteConversation(id: string): Promise<void> {
       + 'Alterações já feitas no computador NÃO serão desfeitas. '
       + 'Não será possível restaurar esta conversa.'
     )) return
-    await perform(\`conversation:\${id}\`, 'Excluindo definitivamente', () =>
+    await perform(`conversation:${id}`, 'Excluindo definitivamente', () =>
       permanentlyDeleteStoppedConversation(id), () => {
         setConversations((current) => current.filter((item) => item.id !== id))
         setDeletionBlockedIds((current) => {
