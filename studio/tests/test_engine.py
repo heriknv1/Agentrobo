@@ -100,6 +100,31 @@ class StudioTests(unittest.TestCase):
         self.studio.review(self.project, "E001C001", approve=True)
         self.assertEqual(self.studio.status(self.project)["episodes"][0]["scenes"][0]["status"], "approved")
 
+    def test_find_projects_after_restart(self):
+        fresh = Studio(Path(self.tmp.name))
+        self.assertIn(self.project, [p["id"] for p in fresh.projects()["projects"]])
+
+    def test_reference_image_copy_and_bible_lock(self):
+        source = Path(self.tmp.name) / "photo.png"
+        source.write_bytes(b"\x89PNG\r\n\x1a\n" + b"reference-content")
+        uploaded = self.studio.attach_reference(self.project, "CHAR01", str(source))
+        self.assertTrue(Path(uploaded["file"]).exists())
+        self.assertIn("referencias/CHAR01.png", self.studio.prompt(self.project, "E001C001")["prompt"])
+        with self.assertRaises(StudioError):
+            self.studio.attach_reference(self.project, "CHAR01", str(source))
+        with self.assertRaises(StudioError):
+            self.studio.bible(self.project, [{"id": "CHAR01"}], [], "different")
+
+    def test_revise_scene_rechecks_cost_and_720p(self):
+        p = self.studio.revise_scene(self.project, "E001C001",
+            {"model": "omni-flash-1.2", "seconds": 6, "dialogue": "Olá, Emily."})
+        self.assertEqual(p["model"], "omni-flash-1.2")
+        self.assertEqual(p["estimated_credits"], 18)
+        self.assertIn("Olá, Emily.", p["prompt"])
+        self.assertEqual(p["resolution"], "720p")
+        with self.assertRaises(StudioError):
+            self.studio.revise_scene(self.project, "E001C001", {"model": "veo-3.1-fast"})
+
     def test_no_overwrite_or_invalid_character(self):
         with self.assertRaises(StudioError):
             self.studio.episode(self.project, 1, "Repetido", "sinopse", [
