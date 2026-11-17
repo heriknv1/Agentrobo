@@ -32,6 +32,24 @@ def _json_array(value, what):
     return result
 
 
+def studio_list_projects() -> str:
+    return _reply(_studio().projects)
+
+
+def studio_attach_reference(project_id: str, subject_id: str, file_path: str) -> str:
+    return _reply(_studio().attach_reference, project_id=project_id,
+                  subject_id=subject_id, file_path=file_path)
+
+
+def studio_revise_scene(project_id: str, scene_id: str, changes_json: str) -> str:
+    try:
+        changes = json.loads(changes_json)
+    except (TypeError, ValueError):
+        return json.dumps({"status": "error", "error": "changes_json inválido"}, ensure_ascii=False)
+    return _reply(_studio().revise_scene, project_id=project_id, scene_id=scene_id,
+                  changes=changes)
+
+
 def studio_create_project(title: str, premise: str, genre: str = "drama",
                           aspect: str = "16:9", daily_limit: int = 50,
                           episode_limit: int = 150) -> str:
@@ -105,6 +123,17 @@ def register_tools(registry, _settings=None):
     # Tools are bound to Documents/monaw/Agentrobo-Studio and deliberately have
     # no access to Google credentials or to hidden browser endpoints.
     defs = [
+        ("studio_list_projects", studio_list_projects,
+         "Listar projetos existentes para retomar uma mininovela sem criar duplicata.",
+         {}, []),
+        ("studio_attach_reference", studio_attach_reference,
+         "Adicionar imagem de referência local a personagem/cenário antes de gerar; aceita JPG PNG WEBP até 20 MB.",
+         {"project_id": "string", "subject_id": "string", "file_path": "string"},
+         ["project_id", "subject_id", "file_path"]),
+        ("studio_revise_scene", studio_revise_scene,
+         "Editar roteiro/prompt/modelo/duração de uma cena que ainda não foi gerada. changes_json é objeto JSON.",
+         {"project_id": "string", "scene_id": "string", "changes_json": "string"},
+         ["project_id", "scene_id", "changes_json"]),
         ("studio_create_project", studio_create_project, "Criar projeto de mininovela 720p.",
          {"title": "string", "premise": "string", "genre": "string", "aspect": "string",
           "daily_limit": "integer", "episode_limit": "integer"}, ["title", "premise"]),
@@ -148,7 +177,7 @@ def register_tools(registry, _settings=None):
          {"project_id": "string", "episode_number": "integer"}, ["project_id", "episode_number"]),
     ]
     for name, function, description, fields, required in defs:
-        mutates = name not in {"studio_project_status", "studio_next_scene"}
+        mutates = name not in {"studio_project_status", "studio_next_scene", "studio_list_projects"}
         registry.register({
             "name": name,
             "description": description,
