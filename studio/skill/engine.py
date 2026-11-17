@@ -314,6 +314,9 @@ class Studio:
                     c not in known for c in changes["characters"]
                 ):
                     raise StudioError("Personagens inválidos")
+            if "location_id" in changes and changes["location_id"]:
+                if changes["location_id"] not in {loc["id"] for loc in p["locations"]}:
+                    raise StudioError("Cenário inválido")
             for key, value in changes.items():
                 if key in {"summary", "dialogue", "camera", "continuity", "location_id"}:
                     if key == "summary":
@@ -420,6 +423,7 @@ class Studio:
                 raise StudioError("Tomada já importada; arquivo não será sobrescrito")
             shutil.copy2(path, destination)
             s["media"] = str(destination.relative_to(self._path(project_id)))
+            s["media_sha256"] = hashlib.sha256(destination.read_bytes()).hexdigest()
             s["status"] = "generated"
             if s["attempts"] and s["attempts"][-1]["state"] == "uncertain":
                 s["attempts"][-1]["state"] = "generated"
@@ -464,6 +468,10 @@ class Studio:
         files = [root / s["media"] for s in ep["scenes"]]
         if any(not path.is_file() for path in files):
             raise StudioError("Clipes ausentes: confira a pasta do projeto")
+        for scene, clip in zip(ep["scenes"], files):
+            digest = hashlib.sha256(clip.read_bytes()).hexdigest()
+            if not scene.get("media_sha256") or scene["media_sha256"] != digest:
+                raise StudioError("Clipe alterado após aprovação: revise a cena " + scene["id"])
         expected = (1280, 720) if p["aspect"] == "16:9" else (720, 1280)
         if any(self._probe(f) != expected for f in files):
             raise StudioError("Todos os vídeos precisam ser 720p nativo")
