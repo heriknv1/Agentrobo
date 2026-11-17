@@ -26,6 +26,14 @@ Ao tentar excluir uma conversa bloqueada, você poderá:
 
 Quando o servidor permitir, a exclusão normal continuará removendo a conversa permanentemente. A lista de IDs ocultos fica somente no armazenamento local da interface do Monaw; limpar o cache/dados da interface poderá restaurar a visualização dessas conversas. Não publique o perfil do Monaw no GitHub.
 
+## Evitar revisão desnecessária em ações simples (correção experimental)
+
+O workflow também aplica `scripts/apply_safe_preflight.py` e executa testes de regressão antes do empacotamento. O patch só marca como **falha sem efeitos** as rejeições do controlador `computer_functions_act` que ocorrem **antes de qualquer tentativa de colocar a janela em foco, clicar, digitar ou iniciar programas**. A classificação é autenticada pela própria função local dentro do mesmo contexto da operação; **nunca** depende de campos enviados pela IA.
+
+Se já ocorreu tentativa de interação, falha de verificação, timeout ou perda de conexão, a execução continua sujeita à revisão. Isso é intencional: os registros não podem afirmar que uma ação não aconteceu sem evidência.
+
+O erro `This run needs review before it can safely continue` ainda pode aparecer por motivos diferentes (execuções de comandos, automação no navegador, falha depois do envio de teclas, operações de arquivos e outros). Para diagnosticar, expanda **Used tools** e verifique o nome da primeira ferramenta com erro e os seus `reason_code`/`error`. Não repita cegamente a mesma ação.
+
 ## Segurança
 
 - Não coloque neste repositório senhas, tokens, chaves de API, logs privados, arquivos de configuração ou a pasta %USERPROFILE%\.monaw.
