@@ -1,0 +1,33 @@
+name: Studio - fast unit tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'studio/**'
+      - 'scripts/install_studio.py'
+      - '.github/workflows/studio-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agentrobo-studio-unit-tests
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Python syntax
+        run: python -m compileall -q studio/skill studio/tests scripts/install_studio.py
+      - name: Studio state-machine and budget tests
+        run: python -m unittest discover -s studio/tests -v
