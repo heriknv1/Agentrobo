@@ -1,0 +1,103 @@
+name: Monaw UIA - build Windows
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monaw-uia-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 70
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Checkout repair scripts (no persisted credentials)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Fetch fixed Monaw v1.1.0 source
+        run: |
+          git clone --no-checkout https://github.com/kailiang0120/monaw.git monaw
+          git -C monaw checkout --detach 81ee729c37746fe0560096fba98b2c5449cd89c4
+          $actual = (git -C monaw rev-parse HEAD).Trim()
+          if ($actual -ne '81ee729c37746fe0560096fba98b2c5449cd89c4') {
+            throw "Unexpected source commit: $actual"
+          }
+
+      - name: Apply packaging and diagnostic fixes
+        run: python scripts/apply_fix.py monaw
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false
+
+      - name: Confirm native Windows automation imports before freezing
+        working-directory: monaw/backend
+        run: |
+          uv run --locked --group packaging python -c "import pywinauto, comtypes, mss, win32gui, win32process, win32clipboard, win32file; print('SOURCE_UIA_IMPORT_OK')"
+          if ($LASTEXITCODE -ne 0) { throw 'Unfrozen import test failed' }
+
+      - name: Build frozen Python backend for Windows
+        working-directory: monaw/backend
+        run: |
+          uv run --locked --group packaging pyinstaller packaging/monaw-backend.spec --noconfirm
+          if ($LASTEXITCODE -ne 0) { throw 'PyInstaller failed' }
+
+      - name: Verify imports inside frozen backend
+        working-directory: monaw/backend
+        run: |
+          $exe = '.\dist\monaw-backend\monaw-backend.exe'
+          & $exe -c "import pywinauto, comtypes, mss, win32gui, win32process, win32clipboard, win32file; from app.skills.computer_use.window_ops import _uia_available; assert _uia_available(), 'UIA unavailable'; print('FROZEN_UIA_IMPORT_OK')"
+          if ($LASTEXITCODE -ne 0) { throw 'Frozen backend import test failed; installer will not be uploaded' }
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install official frontend dependencies
+        working-directory: monaw/frontend
+        run: |
+          npm ci --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { throw 'npm ci failed' }
+
+      - name: Generate third-party license notices
+        working-directory: monaw/backend
+        run: |
+          uv run --locked --group packaging python ../scripts/generate-third-party-notices.py
+          if ($LASTEXITCODE -ne 0) { throw 'License notices failed' }
+
+      - name: Package complete Windows installer
+        working-directory: monaw/frontend
+        run: |
+          npm run package:win
+          if ($LASTEXITCODE -ne 0) { throw 'Windows packaging failed' }
+          $src = 'release/Monaw-Setup-1.1.0-x64.exe'
+          if (!(Test-Path $src)) { throw 'Installer not found' }
+          Copy-Item $src 'release/Monaw-UIA-1.1.0-Windows-x64.exe'
+          (Get-FileHash 'release/Monaw-UIA-1.1.0-Windows-x64.exe' -Algorithm SHA256).Hash |
+            Set-Content 'release/Monaw-UIA-1.1.0-Windows-x64.sha256.txt'
+
+      - name: Upload installer and SHA-256 (expires after 3 days)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Monaw-UIA-1.1.0-Windows-x64
+          path: |
+            monaw/frontend/release/Monaw-UIA-1.1.0-Windows-x64.exe
+            monaw/frontend/release/Monaw-UIA-1.1.0-Windows-x64.sha256.txt
+          retention-days: 3
+          if-no-files-found: error
