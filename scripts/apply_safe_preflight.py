@@ -178,7 +178,13 @@ def run(root: Path) -> None:
     prefix, block, suffix = content[:begin], content[begin:end], content[end:]
     block = replace_once(block, HELPER_ANCHOR, HELPER_REPLACEMENT, "desktop preflight helper")
     for index, (old, new) in enumerate(EARLY_REPLACEMENTS):
-        block = replace_once(block, old, new, f"desktop preflight branch {index}")
+        if index == 6:
+            # Two independent pre-input UIA/index validation branches.
+            if block.count(old) != 2:
+                raise ValueError(f"Unexpected UIA validation branches: {block.count(old)}")
+            block = block.replace(old, new, 2)
+        else:
+            block = replace_once(block, old, new, f"desktop preflight branch {index}")
     tools.write_text(prefix + block + suffix, encoding="utf-8", newline="\n")
 
     content = tests.read_text(encoding="utf-8")
