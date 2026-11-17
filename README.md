@@ -34,6 +34,22 @@ Se já ocorreu tentativa de interação, falha de verificação, timeout ou perd
 
 O erro `This run needs review before it can safely continue` ainda pode aparecer por motivos diferentes (execuções de comandos, automação no navegador, falha depois do envio de teclas, operações de arquivos e outros). Para diagnosticar, expanda **Used tools** e verifique o nome da primeira ferramenta com erro e os seus `reason_code`/`error`. Não repita cegamente a mesma ação.
 
+## Conversas com erro: exclusão definitiva
+
+A compilação acrescenta **Excluir definitivamente** depois de uma tentativa de exclusão bloqueada por uma execução interrompida. Esse comando exige uma confirmação explícita na interface e transmite `discard_unresolved=true&confirmation=EXCLUIR` ao servidor local autenticado. O banco de dados continua recusando apagar conversas com Runs ativos ou operações ainda preparadas, autorizadas ou executando. Em uma conversa parada, a opção apaga de fato a conversa e seus registros de execução locais, em vez de apenas ocultá-la.
+
+**Excluir não reverte efeitos externos:** se o agente mudou algo no Chrome, em arquivos, no Holyrics ou no Windows, essa alteração pode permanecer. Antes da exclusão, use a recuperação ou o Undo quando disponível. Não publique o banco local no GitHub.
+
+## Recuperar ou regressar
+
+A seção de recuperação mostra **Reparar (verificar)** quando o sistema dispõe de prova verificável de uma operação sobre arquivo. **Regressar (desfazer)** usa a prévia e a confirmação já previstas no mecanismo Undo do Monaw para arquivos compatíveis. Ações de navegador, comandos externos e instalações não podem ser automaticamente revertidos de forma geral. Para falhas não verificáveis, revise o aplicativo de destino e retome de um ponto seguro; a ferramenta não repete silenciosamente uma ação incerta.
+
+## Aprovação pela notificação do Windows
+
+Quando um ticket de aprovação é criado, o Monaw pode notificar mesmo com a janela minimizada. **Aprovar** e **Recusar** aparecem somente para pedidos categorizados como de baixo risco e pertencentes à lista restrita de ações de leitura, abertura ou navegação; antes de resolver, o aplicativo consulta novamente o ticket e o backend aplica suas próprias regras de autorização. Para pedidos sensíveis, a notificação oferece somente **Revisar no app**.
+
+Os avisos não incluem senhas, caminhos pessoais nem conteúdo da conversa. Esse recurso depende das notificações do Windows estarem habilitadas, da integração Electron estar ativa e do notebook não estar suspenso. Os botões ainda precisam ser validados em uma instalação Windows 10 real, e algumas configurações do sistema podem suprimir a notificação ou trazer o aplicativo ao primeiro plano.
+
 ## Segurança
 
 - Não coloque neste repositório senhas, tokens, chaves de API, logs privados, arquivos de configuração ou a pasta %USERPROFILE%\.monaw.
