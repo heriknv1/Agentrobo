@@ -197,6 +197,22 @@ export async function deleteConversation(id: string): Promise<void> {
                   Operações ainda ativas continuam protegidas.
                 </span>''')
 
+    tests=root/"backend"/"app"/"agent"/"tests"/"test_local_data_retention.py"
+    replace(tests,
+        '''    with pytest.raises(HTTPException) as response:
+        asyncio.run(conversations.delete_conversation("review-chat"))
+    assert response.value.status_code == 409
+    db.close()
+''',
+        '''    with pytest.raises(HTTPException) as response:
+        asyncio.run(conversations.delete_conversation("review-chat"))
+    assert response.value.status_code == 409
+    # Permanent deletion is explicit and allowed only when no operation is executing.
+    assert db.delete_conversation("review-chat", discard_unresolved=True) is True
+    assert db.fetchone("SELECT 1 FROM conversations WHERE id = 'review-chat'") is None
+    db.close()
+''')
+
 if __name__=="__main__":
     p=argparse.ArgumentParser()
     p.add_argument("monaw_root",type=Path)
