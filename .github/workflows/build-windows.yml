@@ -47,6 +47,15 @@ jobs:
       - name: Show Chrome uncertain-action diagnostics without unsafe retries
         run: python scripts/apply_browser_diagnostics.py monaw
 
+      - name: Enable real deletion of stopped error conversations
+        run: python scripts/apply_permanent_delete.py monaw
+
+      - name: Enable actionable Windows approval notifications
+        run: python scripts/apply_approval_notifications.py monaw
+
+      - name: Expose verified repair and rollback controls
+        run: python scripts/apply_recovery_actions.py monaw
+
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
