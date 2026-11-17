@@ -81,6 +81,11 @@ ipcMain.handle('approval:notify', (event, payload) => {
 })
 
 ipcMain.handle('tasks:notify', (event, status) => {""")
+    # Keep the approval poll responsive while minimized. No other UI actions
+    # are executed by this preference change.
+    patch(main,
+        "    webPreferences: {\\n      preload: path.join(__dirname, 'preload.js'),",
+        "    webPreferences: {\\n      backgroundThrottling: false,\\n      preload: path.join(__dirname, 'preload.js'),")
     # Do not embed windows protocol callbacks or trust a toast to authenticate.
     patch(preload,
         "  notifyTaskStatus: (status) => {",
