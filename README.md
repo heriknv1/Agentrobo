@@ -17,7 +17,7 @@ Limitações: com o Monaw completamente fechado ou o Windows suspenso, não há 
 
 ## Limpeza segura de conversas com erro
 
-Depois de uma falha, se uma conversa tiver Run interrompido ou ação com resultado incerto, o Monaw pode bloquear a exclusão com HTTP 409 para preservar as evidências de segurança. Esta compilação **não contorna** esse bloqueio.
+Depois de uma falha, se uma conversa tiver Run interrompido ou ação com resultado incerto, o Monaw bloqueia a exclusão normal com HTTP 409 para preservar as evidências. A compilação mantém essa proteção por padrão, mas oferece uma **segunda operação explícita de exclusão definitiva** para conversas já paradas. Essa opção é descrita abaixo.
 
 Ao tentar excluir uma conversa bloqueada, você poderá:
 - **Revisar execução**, abrindo a conversa para verificar o estado no painel de recuperação;
